@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyFilter</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; text-align: center; background-color: #f4f4f4; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .upload-section { margin: 20px 0; padding: 20px; border: 2px dashed #ccc; border-radius: 5px; }
+        select, input[type="file"], button { padding: 10px; margin: 5px; font-size: 16px; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; }
+        button:hover { background-color: #0056b3; }
+        .images { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 30px; }
+        .img-box { margin: 10px; }
+        img { max-width: 300px; max-height: 300px; border: 1px solid #ddd; padding: 5px; background: white; }
+        .download-btn { display: inline-block; margin-top: 10px; text-decoration: none; background: #28a745; color: white; padding: 10px 20px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>PyFilter: Image Editor</h1>
+
+    <div class="upload-section">
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" accept="image/*" required>
+            <br><br>
+            <label>Choose Filter:</label>
+            <select name="filter">
+                <option value="grayscale">Grayscale (B&W)</option>
+                <option value="blur">Blur</option>
+                <option value="sharpen">Sharpen</option>
+                <option value="contour">Contour</option>
+                <option value="detail">Detail</option>
+                <option value="edge_enhance">Edge Enhance</option>
+            </select>
+            <br><br>
+            <button type="submit">Upload & Apply</button>
+        </form>
+    </div>
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    {% if processed %}
+    <div class="images">
+        <div class="img-box">
+            <h3>Original</h3>
+            <img src="{{ url_for('static', filename='uploads/' + original) }}">
+        </div>
+        <div class="img-box">
+            <h3>Filtered</h3>
+            <img src="{{ url_for('static', filename='processed/' + processed) }}">
+            <br>
+            <a href="{{ url_for('download_file', filename=processed) }}" class="download-btn">Download Result</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>
