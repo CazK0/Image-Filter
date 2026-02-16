@@ -1,7 +1,7 @@
 import os
 import time
 from flask import Flask, render_template, request, send_from_directory
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageEnhance
 
 app = Flask(__name__)
 
@@ -11,15 +11,18 @@ PROCESSED_FOLDER = 'static/processed'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
-
 @app.route('/', methods=['GET', 'POST'])
 def home():
+    error = None
+    processed_filename = None
+    original_filename = None
+
     if request.method == 'POST':
         if 'file' not in request.files:
             return render_template('index.html', error='No file part')
-
+        
         file = request.files['file']
-
+        
         if file.filename == '':
             return render_template('index.html', error='No selected file')
 
@@ -29,37 +32,42 @@ def home():
             file.save(filepath)
 
             filter_type = request.form.get('filter')
-
+            try:
+                intensity = float(request.form.get('intensity', 2))
+            except ValueError:
+                intensity = 2.0
+            
             img = Image.open(filepath)
-
+            
             if filter_type == 'grayscale':
                 img = img.convert('L')
             elif filter_type == 'blur':
-                img = img.filter(ImageFilter.BLUR)
+                img = img.filter(ImageFilter.GaussianBlur(radius=intensity))
+            elif filter_type == 'sharpen':
+                img = img.filter(ImageFilter.UnsharpMask(radius=intensity, percent=150))
+            elif filter_type == 'brightness':
+                enhancer = ImageEnhance.Brightness(img)
+                img = enhancer.enhance(intensity)
+            elif filter_type == 'contrast':
+                enhancer = ImageEnhance.Contrast(img)
+                img = enhancer.enhance(intensity)
             elif filter_type == 'contour':
                 img = img.filter(ImageFilter.CONTOUR)
-            elif filter_type == 'detail':
-                img = img.filter(ImageFilter.DETAIL)
-            elif filter_type == 'edge_enhance':
-                img = img.filter(ImageFilter.EDGE_ENHANCE)
-            elif filter_type == 'sharpen':
-                img = img.filter(ImageFilter.SHARPEN)
 
             processed_filename = f"edited_{filename}"
             processed_path = os.path.join(PROCESSED_FOLDER, processed_filename)
             img.save(processed_path)
 
-            return render_template('index.html',
-                                   original=filename,
-                                   processed=processed_filename)
+            original_filename = filename
 
-    return render_template('index.html')
+    return render_template('index.html', 
+                           original=original_filename, 
+                           processed=processed_filename,
+                           error=error)
 
-
-@app.route('/download/<filename>')
+@app.route('/download/<path:filename>')
 def download_file(filename):
     return send_from_directory(PROCESSED_FOLDER, filename, as_attachment=True)
-
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
